@@ -10,12 +10,16 @@
         this.tableID = options.tableID;
         this.tableBody = document.querySelector("#"+this.tableID+" tbody");
         this.tableElement = document.getElementById(this.tableID);
+
         this.nextButton = this.element.getElementsByClassName('next')[0];
         this.prevButton = this.element.getElementsByClassName('previous')[0];
+        this.firstButton = this.element.querySelector('a.first');
+        this.lastButton = this.element.querySelector('a.last');
+        
+
         this.paginationLabel = this.element.getElementsByClassName('pagination-label')[0];
         this.cmbRowCount = this.element.querySelector(".cmb-row-count");
-        this.noOfRows = options.noOfRows;     
-        
+        this.noOfRows = options.noOfRows;           
         
         //default values        
         this.start = 1;
@@ -38,9 +42,8 @@
         if(this.totalNoOfRows <= this.noOfRows){            
             this.element.style.display = 'none';
         }else{
-            this.showRows(this.totalRows, this.start, this.end); 
-            
             this.generatePageButtons();
+            this.showRows(this.totalRows, this.start, this.end);             
         }
     }
 
@@ -48,7 +51,7 @@
 
         this.currentPageNo = 1;
 
-        let noOfPages = Math.ceil(this.totalNoOfRows / this.noOfRows);
+        this.noOfPages = Math.ceil(this.totalNoOfRows / this.noOfRows);
 
         // remove pre generated buttons if exist
         this.element.querySelectorAll(".btn-page").forEach(element => {
@@ -57,11 +60,11 @@
 
     
 
-        for(let i=1; i<=noOfPages; i++){
+        for(let i=1; i<=this.noOfPages; i++){
             let a = document.createElement('a');
             a.href = "#";
             a.setAttribute('data-page', i);
-            a.className = "round btn-page";
+            a.className = "round btn-page btn-page-"+i;
             if(i === this.currentPageNo){
                 a.classList.add("active");
             }
@@ -76,44 +79,54 @@
     addEvents(){
         this.nextButton.addEventListener('click', ()=>this.onNext());
         this.prevButton.addEventListener('click', ()=>this.onPrevious());
+        this.firstButton.addEventListener('click', ()=>this.onFirst());
+        this.lastButton.addEventListener('click', ()=>this.onLast());
 
         this.cmbRowCount.addEventListener('change', (e)=>this.onRowCountChange(e));
     }
 
     onNext(){
         
-        this.start = this.end + 1;
-        this.end = this.start + this.noOfRows - 1;
+        this.currentPageNo++;
 
-        if(this.end >= this.totalNoOfRows){
-            this.end = this.totalNoOfRows;                     
-        }       
-        this.showRows(this.totalRows, this.start, this.end); 
+        this.goToThePage();
     }
 
     onPrevious(){
         
-        if(this.start > 1){
-            this.start = this.start - this.noOfRows;
-            this.end = this.start + this.noOfRows - 1;
-        }
+        this.currentPageNo--;
+        this.goToThePage();
 
-        this.showRows(this.totalRows, this.start, this.end);
+    }
 
+    onFirst(){
+        console.log('asfljsd');
+        this.currentPageNo = 1;
+        this.goToThePage();
+    }
+
+    onLast(){
+        this.currentPageNo = this.noOfPages;
+        console.log(this.currentPageNo);
+        this.goToThePage();
     }
 
     jumpToPage(e){
-        let page = parseInt(e.target.getAttribute('data-page'));
-        this.currentPageNo = page;
-        this.start = ((page - 1) * this.noOfRows) + 1;
-        this.end = this.start + this.noOfRows - 1;
-
-        document.querySelector(".btn-page.active").classList.remove('active');
-        e.target.classList.add('active');
-
-        this.showRows(this.totalRows, this.start, this.end);
+        this.currentPageNo = parseInt(e.target.getAttribute('data-page'));
+        this.goToThePage();
     }
 
+    goToThePage(){
+        this.start = ((this.currentPageNo - 1) * this.noOfRows) + 1;
+        this.end = this.start + this.noOfRows - 1;
+
+        if(this.end >= this.totalNoOfRows){
+            this.end = this.totalNoOfRows;                     
+        }
+        
+        this.showRows(this.totalRows, this.start, this.end);
+    }
+    
     onRowCountChange(e){
         this.noOfRows = parseInt(e.target.value);
         this.generatePageButtons();
@@ -121,36 +134,43 @@
         this.end = this.noOfRows;
         this.showRows(this.totalRows, this.start, this.end); 
     }
-
+    
     showRows(rows, start, end){
         
         start = start -1;
         end = end - 1;         
-
+        
         this.tableBody.innerHTML = "";
-
+        
         for(let i=0; i<rows.length; i++ ){
             if(i >= start && i <= end){
                 this.tableBody.appendChild(rows[i]);                
             }           
         }
-
+        
         this.updatePagination();
     }
-
+    
     updatePagination(){
-
-       if(this.end == this.totalNoOfRows ){
-           this.nextButton.style.display = 'none';
-       }else{
-        this.nextButton.style.display = 'block';
-       }     
-
-       if(this.start == 1){
+        
+        if(this.end == this.totalNoOfRows ){
+            this.nextButton.style.display = 'none';
+            this.lastButton.style.display = 'none';
+        }else{
+            this.nextButton.style.display = 'block';
+            this.lastButton.style.display = 'block';
+        }     
+        
+        if(this.start == 1){
             this.prevButton.style.display = 'none';
+            this.firstButton.style.display = 'none';
         }else{
             this.prevButton.style.display = 'block';
+            this.firstButton.style.display = 'block';
         }    
+
+        document.querySelector(".btn-page.active").classList.remove('active');
+        document.querySelector(".btn-page-"+this.currentPageNo).classList.add('active');
 
        this.paginationLabel.innerHTML = "Viewing <span>"+this.start+"-"+this.end+"</span> of <span>"+this.totalNoOfRows+"</span>"; 
     }
